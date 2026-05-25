@@ -11,6 +11,7 @@ abstract class Routes {
 
   static const SPLASH      = _Paths.SPLASH;
   static const LOGIN       = _Paths.LOGIN;
+  static const REGISTER    = _Paths.REGISTER;
   static const AUTH        = _Paths.AUTH;
   static const HOME        = _Paths.HOME;
   static const PROFIL      = _Paths.PROFIL;
@@ -27,6 +28,7 @@ abstract class _Paths {
 
   static const SPLASH      = '/splash';
   static const LOGIN       = '/login';
+  static const REGISTER    = '/register';
   static const AUTH        = '/auth';
   static const HOME        = '/home';
   static const PROFIL      = '/profil';
@@ -35,4 +37,6 @@ abstract class _Paths {
   static const RAHWANA     = '/rahwana';
   static const CERITA_HOME = '/cerita';
   static const BARATAYUDA  = '/cerita/baratayuda';
+
+  
 }

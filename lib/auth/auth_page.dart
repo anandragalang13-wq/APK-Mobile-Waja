@@ -51,8 +51,7 @@ class AuthPage extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   // LOGIN SUKSES
-                  AuthState.isLoggedIn = true;
-
+                  
                   Navigator.pop(context);
                 },
                 child: const Text('Login'),

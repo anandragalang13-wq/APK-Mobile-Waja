@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 // Auth
 import '../auth/auth_page.dart';
+import '../auth/auth_service.dart';
 import '../auth/auth_state.dart';
 
 // Pages
 import '../pages/splash.dart';
 import '../pages/login.dart';
+import '../pages/register.dart';
 import '../pages/halaman_utama.dart';
 import '../pages/profil_page.dart';
 import '../pages/cari_page.dart';
@@ -29,6 +31,7 @@ class AppPages {
   static final routes = <String, WidgetBuilder>{
     _Paths.SPLASH: (context) => const SplashPage(),
     _Paths.LOGIN: (context) => const LoginPage(),
+    _Paths.REGISTER: (context) => const RegisterPage(),
     _Paths.AUTH: (context) => const AuthPage(),
     _Paths.HOME: (context) => const WayangHomePage(),
     _Paths.PROFIL: (context) => const ProfilePage(),

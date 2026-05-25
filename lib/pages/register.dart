@@ -1,51 +1,77 @@
 import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
-import '../pages/halaman_utama.dart';
-import 'register.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
   // ─── Warna tema WAJA ───────────────────────────────────────────────────────
   static const Color coklat      = Color(0xFFBC7647);
   static const Color coklatGelap = Color(0xFF8B5320);
   static const Color krem        = Color(0xFFF5EDE0);
 
-  final _emailCtrl    = TextEditingController();
-  final _passwordCtrl = TextEditingController();
-  bool _isLoading     = false;
-  bool _obscurePass   = true;
+  final _usernameCtrl  = TextEditingController();
+  final _emailCtrl     = TextEditingController();
+  final _passwordCtrl  = TextEditingController();
+  final _confirmCtrl   = TextEditingController();
+
+  bool _isLoading   = false;
+  bool _obscurePass = true;
+  bool _obscureConf = true;
+  bool _agree       = false;
 
   @override
   void dispose() {
+    _usernameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
+    _confirmCtrl.dispose();
     super.dispose();
   }
 
-  // ─── Login Email ────────────────────────────────────────────────────────────
-  Future<void> _loginEmail() async {
+  // ─── Register Email ─────────────────────────────────────────────────────────
+  Future<void> _register() async {
+    final username = _usernameCtrl.text.trim();
     final email    = _emailCtrl.text.trim();
     final password = _passwordCtrl.text;
+    final confirm  = _confirmCtrl.text;
 
-    if (email.isEmpty || password.isEmpty) {
-      _showSnack('Email dan password wajib diisi.');
+    // Validasi
+    if (username.isEmpty || email.isEmpty || password.isEmpty) {
+      _showSnack('Semua kolom wajib diisi.');
+      return;
+    }
+    if (username.length < 3) {
+      _showSnack('Username minimal 3 karakter.');
+      return;
+    }
+    if (password != confirm) {
+      _showSnack('Password dan konfirmasi tidak cocok.');
+      return;
+    }
+    if (password.length < 6) {
+      _showSnack('Password minimal 6 karakter.');
+      return;
+    }
+    if (!_agree) {
+      _showSnack('Setujui syarat & ketentuan terlebih dahulu.');
       return;
     }
 
     setState(() => _isLoading = true);
     try {
-      await AuthService.instance.loginWithEmail(
+      await AuthService.instance.registerWithEmail(
+        username: username,
         email: email,
         password: password,
       );
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/home');
+      _showSnack('Akun berhasil dibuat! Silakan masuk.');
+      Navigator.pop(context); // kembali ke halaman login
     } on AuthException catch (e) {
       _showSnack(e.message);
     } finally {
@@ -53,13 +79,13 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // ─── Login Google ───────────────────────────────────────────────────────────
-  Future<void> _loginGoogle() async {
+  // ─── Register dengan Google ─────────────────────────────────────────────────
+  Future<void> _registerGoogle() async {
     setState(() => _isLoading = true);
     try {
       final user = await AuthService.instance.signInWithGoogle();
       if (user == null) {
-        _showSnack('Login Google dibatalkan.');
+        _showSnack('Pendaftaran Google dibatalkan.');
         return;
       }
       if (!mounted) return;
@@ -90,18 +116,18 @@ class _LoginPageState extends State<LoginPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              const SizedBox(height: 60),
+              const SizedBox(height: 40),
 
-              // ── Logo / Wayang ─────────────────────────────────────────────
+              // ── Logo ──────────────────────────────────────────────────────
               Hero(
                 tag: 'waja-logo',
-                child: Image.asset('assets/wayang.png', width: 140),
+                child: Image.asset('assets/wayang.png', width: 110),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               const Text(
                 'WAJA',
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 24,
                   fontWeight: FontWeight.w900,
                   color: coklatGelap,
                   letterSpacing: 6,
@@ -109,16 +135,12 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const Text(
                 'Wayang Jawa',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: coklat,
-                  letterSpacing: 2,
-                ),
+                style: TextStyle(fontSize: 12, color: coklat, letterSpacing: 2),
               ),
 
-              const SizedBox(height: 36),
+              const SizedBox(height: 28),
 
-              // ── Kartu Form Login ──────────────────────────────────────────
+              // ── Kartu Form Register ───────────────────────────────────────
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 padding: const EdgeInsets.all(28),
@@ -137,7 +159,7 @@ class _LoginPageState extends State<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Masuk',
+                      'Daftar Akun',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -146,10 +168,19 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Selamat datang kembali',
+                      'Bergabunglah dengan komunitas WAJA',
                       style: TextStyle(color: Colors.grey, fontSize: 13),
                     ),
                     const SizedBox(height: 24),
+
+                    // Username
+                    _label('Username'),
+                    _inputField(
+                      controller: _usernameCtrl,
+                      hint: 'Nama pengguna Anda',
+                      icon: Icons.person_outline,
+                    ),
+                    const SizedBox(height: 14),
 
                     // Email
                     _label('Email'),
@@ -159,40 +190,81 @@ class _LoginPageState extends State<LoginPage> {
                       icon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
 
                     // Password
                     _label('Password'),
                     _inputField(
                       controller: _passwordCtrl,
-                      hint: 'Masukkan password',
+                      hint: 'Minimal 6 karakter',
                       icon: Icons.lock_outline,
                       isPassword: true,
+                      obscure: _obscurePass,
+                      onToggle: () =>
+                          setState(() => _obscurePass = !_obscurePass),
                     ),
+                    const SizedBox(height: 14),
 
-                    // Lupa password
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: _showForgotPassword,
-                        style: TextButton.styleFrom(
-                          foregroundColor: coklat,
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                        ),
-                        child: const Text(
-                          'Lupa password?',
-                          style: TextStyle(fontSize: 13),
-                        ),
-                      ),
+                    // Konfirmasi Password
+                    _label('Konfirmasi Password'),
+                    _inputField(
+                      controller: _confirmCtrl,
+                      hint: 'Ulangi password Anda',
+                      icon: Icons.lock_outline,
+                      isPassword: true,
+                      obscure: _obscureConf,
+                      onToggle: () =>
+                          setState(() => _obscureConf = !_obscureConf),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
 
-                    // Tombol Login
+                    // Checkbox Syarat
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Checkbox(
+                            value: _agree,
+                            activeColor: coklat,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            onChanged: (v) =>
+                                setState(() => _agree = v ?? false),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: RichText(
+                            text: const TextSpan(
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 13),
+                              children: [
+                                TextSpan(text: 'Saya menyetujui '),
+                                TextSpan(
+                                  text: 'Syarat & Ketentuan',
+                                  style: TextStyle(
+                                    color: coklat,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                TextSpan(text: ' yang berlaku.'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Tombol Daftar
                     SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _loginEmail,
+                        onPressed: _isLoading ? null : _register,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: coklat,
                           foregroundColor: Colors.white,
@@ -212,7 +284,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               )
                             : const Text(
-                                'Masuk',
+                                'Buat Akun',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
@@ -227,9 +299,7 @@ class _LoginPageState extends State<LoginPage> {
                     // Pemisah OR
                     Row(
                       children: [
-                        Expanded(
-                          child: Divider(color: Colors.grey.shade300),
-                        ),
+                        Expanded(child: Divider(color: Colors.grey.shade300)),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Text(
@@ -237,20 +307,18 @@ class _LoginPageState extends State<LoginPage> {
                             style: TextStyle(color: Colors.grey.shade500),
                           ),
                         ),
-                        Expanded(
-                          child: Divider(color: Colors.grey.shade300),
-                        ),
+                        Expanded(child: Divider(color: Colors.grey.shade300)),
                       ],
                     ),
 
                     const SizedBox(height: 16),
 
-                    // Tombol Google Sign-In
+                    // Tombol Daftar dengan Google
                     SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: OutlinedButton(
-                        onPressed: _isLoading ? null : _loginGoogle,
+                        onPressed: _isLoading ? null : _registerGoogle,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.black87,
                           side: BorderSide(color: Colors.grey.shade300),
@@ -261,11 +329,10 @@ class _LoginPageState extends State<LoginPage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Logo Google (SVG/PNG disarankan, fallback teks berwarna)
                             _googleLogo(),
                             const SizedBox(width: 12),
                             const Text(
-                              'Masuk dengan Google',
+                              'Daftar dengan Google',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
@@ -281,25 +348,18 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 24),
 
-              // Link ke Register
+              // Link ke Login
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    'Belum punya akun? ',
+                    'Sudah punya akun? ',
                     style: TextStyle(color: Colors.grey),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const RegisterPage(),
-                        ),
-                      );
-                    },
+                    onTap: () => Navigator.pop(context),
                     child: const Text(
-                      'Daftar sekarang',
+                      'Masuk di sini',
                       style: TextStyle(
                         color: coklat,
                         fontWeight: FontWeight.bold,
@@ -336,11 +396,13 @@ class _LoginPageState extends State<LoginPage> {
     required String hint,
     required IconData icon,
     bool isPassword = false,
+    bool obscure = false,
+    VoidCallback? onToggle,
     TextInputType keyboardType = TextInputType.text,
   }) {
     return TextField(
       controller: controller,
-      obscureText: isPassword ? _obscurePass : false,
+      obscureText: isPassword ? obscure : false,
       keyboardType: keyboardType,
       decoration: InputDecoration(
         hintText: hint,
@@ -349,11 +411,11 @@ class _LoginPageState extends State<LoginPage> {
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
-                  _obscurePass ? Icons.visibility_off : Icons.visibility,
+                  obscure ? Icons.visibility_off : Icons.visibility,
                   color: Colors.grey,
                   size: 20,
                 ),
-                onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                onPressed: onToggle,
               )
             : null,
         filled: true,
@@ -372,7 +434,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// Logo Google dengan warna aslinya menggunakan RichText.
   Widget _googleLogo() {
     return Container(
       width: 24,
@@ -390,67 +451,6 @@ class _LoginPageState extends State<LoginPage> {
             color: Color(0xFF4285F4),
           ),
         ),
-      ),
-    );
-  }
-
-  void _showForgotPassword() {
-    final emailCtrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Reset Password',
-          style: TextStyle(color: coklatGelap, fontWeight: FontWeight.bold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Masukkan email Anda untuk menerima link reset password.'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailCtrl,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                hintText: 'contoh@email.com',
-                filled: true,
-                fillColor: krem,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: coklat,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                await AuthService.instance
-                    .sendPasswordResetEmail(emailCtrl.text);
-                _showSnack('Link reset telah dikirim ke email Anda.');
-              } on AuthException catch (e) {
-                _showSnack(e.message);
-              }
-            },
-            child: const Text('Kirim'),
-          ),
-        ],
       ),
     );
   }
